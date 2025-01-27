@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sarap ng mommy mo eliz</title>
+    <style>
+        :root {
+            --primary: #9c27b0;
+            --primary-light: #ba68c8;
+            --secondary: #e91e63;
+            --secondary-light: #f48fb1;
+            --bg: #f3e5f5;
+        }
+
+        body {
+            font-family: system-ui, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: var(--bg);
+            color: #333;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: var(--primary);
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+
+        .image-container {
+            position: relative;
+            max-width: 100%;
+            margin: 20px 0;
+            min-height: 300px;
+            border: 2px dashed var(--primary-light);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        #uploadedImage {
+            max-width: 100%;
+            display: none;
+        }
+
+        .sticker {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+
+        .upload-label {
+            background: var(--primary);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .upload-label:hover {
+            background: var(--primary-light);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        button {
+            background: var(--secondary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        button:hover {
+            background: var(--secondary-light);
+        }
+
+        button:disabled {
+            background: #e0e0e0;
+            cursor: not-allowed;
+        }
+
+        .placeholder-text {
+            color: #666;
+            font-size: 1.1em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✨ Eliz Booth ✨</h1>
+        
+        <div class="controls">
+            <label class="upload-label">
+                📁 Choose Image
+                <input type="file" id="imageInput" accept="image/*">
+            </label>
+            <button id="addSticker" disabled>🎯 Spawn Eliz</button>
+            <button id="reset" disabled>🔄 Reset</button>
+        </div>
+
+        <div class="image-container" id="imageContainer">
+            <img id="uploadedImage" alt="Uploaded image">
+            <div class="placeholder-text">Upload any image you want baby, I won't see it don't worry!</div>
+        </div>
+    </div>
+
+    <script>
+        const imageInput = document.getElementById('imageInput');
+        const uploadedImage = document.getElementById('uploadedImage');
+        const imageContainer = document.getElementById('imageContainer');
+        const addStickerBtn = document.getElementById('addSticker');
+        const resetBtn = document.getElementById('reset');
+        const placeholderText = document.querySelector('.placeholder-text');
+        
+        // Track placed stickers for overlap prevention
+        let placedStickers = [];
+        const STICKER_SIZE = 80;
+        const ATTEMPTS_MAX = 50;
+
+        // Array of sticker URLs (using placeholders)
+        const stickerUrls = [
+            'https://i.imgur.com/bnJGwcp.png',
+            'https://i.imgur.com/t2Mz1zH.png',
+            'https://i.imgur.com/XQFQl9G.png',
+            'https://i.imgur.com/06WrFVc.png',
+            'https://i.imgur.com/t2Mz1zH.png'
+        ];
+
+        imageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    uploadedImage.src = e.target.result;
+                    uploadedImage.style.display = 'block';
+                    addStickerBtn.disabled = false;
+                    resetBtn.disabled = false;
+                    placeholderText.style.display = 'none';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function checkOverlap(x, y) {
+            return placedStickers.some(sticker => {
+                return !(x + STICKER_SIZE < sticker.x ||
+                    x > sticker.x + STICKER_SIZE ||
+                    y + STICKER_SIZE < sticker.y ||
+                    y > sticker.y + STICKER_SIZE);
+            });
+        }
+
+        function getRandomPosition() {
+            const containerRect = imageContainer.getBoundingClientRect();
+            const maxX = containerRect.width - STICKER_SIZE;
+            const maxY = containerRect.height - STICKER_SIZE;
+            
+            let attempts = 0;
+            while (attempts < ATTEMPTS_MAX) {
+                const x = Math.floor(Math.random() * maxX);
+                const y = Math.floor(Math.random() * maxY);
+                
+                if (!checkOverlap(x, y)) {
+                    return { x, y };
+                }
+                attempts++;
+            }
+            return null;
+        }
+
+        addStickerBtn.addEventListener('click', () => {
+            const position = getRandomPosition();
+            if (!position) {
+                alert('No more space available for stickers!');
+                return;
+            }
+
+            const sticker = document.createElement('img');
+            // Get random sticker URL from the array
+            const randomStickerUrl = stickerUrls[Math.floor(Math.random() * stickerUrls.length)];
+            sticker.src = randomStickerUrl;
+            sticker.classList.add('sticker');
+            sticker.style.left = `${position.x}px`;
+            sticker.style.top = `${position.y}px`;
+            
+            placedStickers.push(position);
+            imageContainer.appendChild(sticker);
+        });
+
+        resetBtn.addEventListener('click', () => {
+            const stickers = imageContainer.getElementsByClassName('sticker');
+            while (stickers.length > 0) {
+                stickers[0].remove();
+            }
+            placedStickers = [];
+        });
+    </script>
+</body>
+</html>
